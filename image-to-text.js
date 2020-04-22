@@ -3,20 +3,22 @@ const {createCanvas, loadImage} = require('canvas');
 const canvas = createCanvas(56, 56);
 const context = canvas.getContext('2d');
 
-let text = '';
+let lines = [];
 let n = 0;
 
 function next() {
     n ++;
 
     if (n > 151) {
-        console.log(text);
+    //if (n > 1) {
+        console.log(lines.join('\n'));
         return;
     }
 
     let filename = n + '.png';
 
     loadImage('gray/' + filename).then(image => {
+    //loadImage('1text.png').then(image => {
         context.fillStyle = 'white';
         context.fillRect(0, 0, 56, 56);
 
@@ -27,9 +29,9 @@ function next() {
         let imageData = context.getImageData(0, 0, 64, 64);
         let data = imageData.data;
 
-        text += 'START ';
-
         for (let y = 0; y < 56; y ++) {
+            let split = ['<'+('00'+y).substr(-2)+'>'];
+
             for (let x = 0; x < 56; x ++) {
                 let i = ((y*56) + x) * 4;
 
@@ -41,10 +43,10 @@ function next() {
 
                 let c = Math.floor((a/255)*9);
 
-                s = String.fromCharCode(c+48);
-
-                text += s + ' ';
+                split.push(c);
             }
+
+            lines.push(split.join(' '));
         }
 
         next();
