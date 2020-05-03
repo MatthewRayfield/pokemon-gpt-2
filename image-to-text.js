@@ -1,6 +1,6 @@
 const fs = require('fs');
 const {createCanvas, loadImage} = require('canvas');
-const canvas = createCanvas(56, 56);
+const canvas = createCanvas(64, 64);
 const context = canvas.getContext('2d');
 
 let lines = [];
@@ -9,7 +9,7 @@ let n = 0;
 function next() {
     n ++;
 
-    if (n > 151) {
+    if (n > 386) {
     //if (n > 1) {
         console.log(lines.join('\n'));
         return;
@@ -17,36 +17,49 @@ function next() {
 
     let filename = n + '.png';
 
-    loadImage('gray/' + filename).then(image => {
+    loadImage('pokemon/' + filename).then(image => {
     //loadImage('1text.png').then(image => {
-        context.fillStyle = 'white';
-        context.fillRect(0, 0, 56, 56);
+        context.clearRect(0, 0, 64, 64);
+        //context.fillStyle = 'white';
+        //context.fillRect(0, 0, 64, 64);
 
-        let xo = Math.floor((56-image.width)/2);
-        let yo = Math.floor((56-image.height)/2);
+        let xo = Math.floor((64-image.width)/2);
+        let yo = Math.floor((64-image.height)/2);
         context.drawImage(image, xo, yo);
 
         let imageData = context.getImageData(0, 0, 64, 64);
         let data = imageData.data;
 
-        for (let y = 0; y < 56; y ++) {
-            let split = ['<'+('00'+y).substr(-2)+'>'];
+        for (let y = 0; y < 64; y ++) {
+            let split = [];
 
-            for (let x = 0; x < 56; x ++) {
-                let i = ((y*56) + x) * 4;
+            for (let x = 0; x < 64; x ++) {
+                let i = ((y*64) + x) * 4;
 
-                let r = data[i+0];
-                let g = data[i+1];
-                let b = data[i+2];
+                let r = Math.floor(data[i+0]/64);
+                let g = Math.floor(data[i+1]/64);
+                let b = Math.floor(data[i+2]/64);
 
-                let a = (r+g+b) / 3;
+                let s = '~';
 
-                let c = Math.floor((a/255)*9);
+                if (data[i+3] > 128) {
+                    let c = 0;
 
-                split.push(c);
+                    c += r;
+                    c = c << 2;
+                    c += g;
+                    c = c << 2;
+                    c += b;
+
+                    s = String.fromCharCode(c+33);
+                }
+
+                split.push(s);
             }
 
-            lines.push(split.join(' '));
+            const lineNumber = ('00'+y).substr(-2);
+            lines.push(['<'+lineNumber+'d>'].concat(split).join(' '));
+            lines.unshift(['<'+lineNumber+'u>'].concat(split).join(' '));
         }
 
         next();
