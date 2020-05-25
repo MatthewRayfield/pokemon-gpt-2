@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "canvas": "^2.6.1",
+    "gifencoder": "^2.0.1",
+    "gifuct-js": "github:matt-way/gifuct-js"
+  }
+}

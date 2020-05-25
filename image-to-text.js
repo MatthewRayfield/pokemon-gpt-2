@@ -1,6 +1,6 @@
 const fs = require('fs');
 const {createCanvas, loadImage} = require('canvas');
-const canvas = createCanvas(64, 64);
+const canvas = createCanvas(60, 60);
 const context = canvas.getContext('2d');
 
 let lines = [];
@@ -9,60 +9,45 @@ let n = 0;
 function next() {
     n ++;
 
-    if (n > 386) {
-    //if (n > 1) {
+    if (n > 251) {
         console.log(lines.join('\n'));
         return;
     }
 
-    let filename = n + '.png';
+    loadImage('animation-frames/' + n + '-0.png').then(imageA => {
+        loadImage('animation-frames/' + n + '-1.png').then(imageB => {
+            context.clearRect(0, 0, 60, 60);
+            context.drawImage(imageA, 0, 0);
+            let imageDataA = context.getImageData(0, 0, 60, 60);
+            let dataA = imageDataA.data;
 
-    loadImage('pokemon/' + filename).then(image => {
-    //loadImage('1text.png').then(image => {
-        context.clearRect(0, 0, 64, 64);
-        //context.fillStyle = 'white';
-        //context.fillRect(0, 0, 64, 64);
+            context.clearRect(0, 0, 60, 60);
+            context.drawImage(imageB, 0, 0);
+            let imageDataB = context.getImageData(0, 0, 60, 60);
+            let dataB = imageDataB.data;
 
-        let xo = Math.floor((64-image.width)/2);
-        let yo = Math.floor((64-image.height)/2);
-        context.drawImage(image, xo, yo);
+            for (let y = 0; y < 60; y ++) {
 
-        let imageData = context.getImageData(0, 0, 64, 64);
-        let data = imageData.data;
+                [dataA, dataB].forEach((data, f) => {
+                    let split = [];
 
-        for (let y = 0; y < 64; y ++) {
-            let split = [];
+                    for (let x = 0; x < 60; x ++) {
+                        let i = ((y*60) + x) * 4;
 
-            for (let x = 0; x < 64; x ++) {
-                let i = ((y*64) + x) * 4;
+                        let r = Math.floor(data[i+0] / 17);
+                        let g = Math.floor(data[i+1] / 17);
+                        let b = Math.floor(data[i+2] / 17);
 
-                let r = Math.floor(data[i+0]/64);
-                let g = Math.floor(data[i+1]/64);
-                let b = Math.floor(data[i+2]/64);
+                        split.push(r.toString(16) + g.toString(16) + b.toString(16));
+                    }
 
-                let s = '~';
-
-                if (data[i+3] > 128) {
-                    let c = 0;
-
-                    c += r;
-                    c = c << 2;
-                    c += g;
-                    c = c << 2;
-                    c += b;
-
-                    s = String.fromCharCode(c+33);
-                }
-
-                split.push(s);
+                    const lineNumber = ('00'+y).substr(-2);
+                    lines.push(['<'+lineNumber+(!f ? 'A' : 'B')+'>'].concat(split).join(' '));
+                });
             }
 
-            const lineNumber = ('00'+y).substr(-2);
-            lines.push(['<'+lineNumber+'d>'].concat(split).join(' '));
-            lines.unshift(['<'+lineNumber+'u>'].concat(split).join(' '));
-        }
-
-        next();
+            next();
+        });
     });
 }
 
