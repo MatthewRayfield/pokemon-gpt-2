@@ -27,6 +27,8 @@ function next() {
             let dataB = imageDataB.data;
 
             for (let y = 0; y < 60; y ++) {
+                let framePair = [];
+                let hasColor = true; // set to false to strip top & bottom white space
 
                 [dataA, dataB].forEach((data, f) => {
                     let split = [];
@@ -38,12 +40,25 @@ function next() {
                         let g = Math.floor(data[i+1] / 17);
                         let b = Math.floor(data[i+2] / 17);
 
-                        split.push(r.toString(16) + g.toString(16) + b.toString(16));
+                        let colorCode = r.toString(16) + g.toString(16) + b.toString(16);
+                        split.push(colorCode);
+
+                        if (!hasColor && colorCode != 'fff') {
+                            hasColor = true;
+                        }
                     }
 
                     const lineNumber = ('00'+y).substr(-2);
-                    lines.push(['<'+lineNumber+(!f ? 'A' : 'B')+'>'].concat(split).join(' '));
+                    framePair.push(['<'+lineNumber+(!f ? 'A' : 'B')+'d>'].concat(split).join(' '));
                 });
+
+                if (hasColor) {
+                    lines.push(framePair[0]);
+                    lines.push(framePair[1]);
+
+                    lines.unshift(framePair[1].replace('d>', 'u>'));
+                    lines.unshift(framePair[0].replace('d>', 'u>'));
+                }
             }
 
             next();
