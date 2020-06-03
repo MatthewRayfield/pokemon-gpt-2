@@ -9,7 +9,8 @@ let n = 0;
 function next() {
     n ++;
 
-    if (n > 251) {
+    //if (n > 251) {
+    if (n > 1) {
         console.log(lines.join('\n'));
         return;
     }
@@ -28,7 +29,6 @@ function next() {
 
             for (let y = 0; y < 60; y ++) {
                 let framePair = [];
-                let hasColor = true; // set to false to strip top & bottom white space
 
                 [dataA, dataB].forEach((data, f) => {
                     let split = [];
@@ -36,29 +36,36 @@ function next() {
                     for (let x = 0; x < 60; x ++) {
                         let i = ((y*60) + x) * 4;
 
-                        let r = Math.floor(data[i+0] / 17);
-                        let g = Math.floor(data[i+1] / 17);
-                        let b = Math.floor(data[i+2] / 17);
+                        let r = Math.floor(data[i+0]/64);
+                        let g = Math.floor(data[i+1]/64);
+                        let b = Math.floor(data[i+2]/64);
 
-                        let colorCode = r.toString(16) + g.toString(16) + b.toString(16);
-                        split.push(colorCode);
+                        let s = '~';
 
-                        if (!hasColor && colorCode != 'fff') {
-                            hasColor = true;
+                        if (data[i+3] > 128) {
+                            let c = 0;
+
+                            c += r;
+                            c = c << 2;
+                            c += g;
+                            c = c << 2;
+                            c += b;
+
+                            s = String.fromCharCode(c+33);
                         }
+
+                        split.push(s);
                     }
 
                     const lineNumber = ('00'+y).substr(-2);
                     framePair.push(['<'+lineNumber+(!f ? 'A' : 'B')+'d>'].concat(split).join(' '));
                 });
 
-                if (hasColor) {
-                    lines.push(framePair[0]);
-                    lines.push(framePair[1]);
+                lines.push(framePair[0]);
+                lines.push(framePair[1]);
 
-                    lines.unshift(framePair[1].replace('d>', 'u>'));
-                    lines.unshift(framePair[0].replace('d>', 'u>'));
-                }
+                lines.unshift(framePair[1].replace('d>', 'u>'));
+                lines.unshift(framePair[0].replace('d>', 'u>'));
             }
 
             next();

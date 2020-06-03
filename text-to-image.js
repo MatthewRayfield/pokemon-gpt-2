@@ -3,10 +3,10 @@ const {createCanvas, loadImage, createImageData} = require('canvas');
 const GIFEncoder = require('gifencoder');
 
 function parseMarker(string) {
-    let result = /<([0-9]+)([AB])>/.exec(string);
+    let result = /<([0-9]+)([AB])([ud])>/.exec(string);
 
     if (result) {
-        return {line: parseInt(result[1]), frame: result[2] == 'A' ? 0 : 1};
+        return {line: parseInt(result[1]), frame: result[2] == 'A' ? 0 : 1, direction: result[3]};
     }
 
     return null;
@@ -58,17 +58,27 @@ process.argv.slice(2).forEach(path => {
             const data = [dataA, dataB][marker.frame];
 
             for (let x = 0; x < split.length-1; x ++) {
-                let colorCode = split[x+1].split('');
+                let s = split[x+1] || '~';
 
-                let r = parseInt(colorCode[0], 16) * 16;
-                let g = parseInt(colorCode[1], 16) * 16;
-                let b = parseInt(colorCode[2], 16) * 16;
+                if (s != '~') {
+                    let i = ((y*imageWidth) + x) * 4;
 
-                let i = ((y*imageWidth) + x) * 4;
-                data[i+0] = r;
-                data[i+1] = g;
-                data[i+2] = b;
-                data[i+3] = 255;
+                    let c = s.charCodeAt(0)-33;
+
+                    let b = (c & 3) * 64;
+                    if (b == 192) b += 63;
+                    c = c >> 2;
+                    let g = (c & 3) * 64;
+                    if (g == 192) g += 63;
+                    c = c >> 2
+                    let r = (c & 3) * 64;
+                    if (r == 192) r += 63;
+
+                    data[i+0] = r;
+                    data[i+1] = g;
+                    data[i+2] = b;
+                    data[i+3] = 255;
+                }
             }
         }
     });

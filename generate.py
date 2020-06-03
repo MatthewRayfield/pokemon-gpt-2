@@ -65,12 +65,12 @@ for ii in range(0,1):
 
                     if not hasColor:
                         for character in split[1:]:
-                            if character != 'fff':
+                            if character != '~' and character != '`':
                                 hasColor = True
                                 break
 
                     while len(split) < 61:
-                        split.append('fff')
+                        split.append('`')
 
                     frameType = marker[3]
 
@@ -81,6 +81,12 @@ for ii in range(0,1):
             print('no color')
             linePairs = blankLinePairs()
             continue
+
+        # remove half pairs
+        for pair in linePairs:
+            if not pair['A'] or not pair['B']:
+                pair['A'] = ''
+                pair['B'] = ''
 
         topIndex = None
         for i in range(0, 60):
@@ -99,16 +105,16 @@ for ii in range(0,1):
 
         print('\n\ntop %i bottom %i' % (topIndex, bottomIndex))
 
-        sectionSize = 2
+        sectionSize = 4
         if topIndex > 0:
-            pairs = linePairs[topIndex:min(topIndex+sectionSize, bottomIndex)]
+            pairs = linePairs[topIndex:min(topIndex+sectionSize+1, bottomIndex+1)]
             pairs.reverse()
             section = interlacePairs(pairs)
             for i in range(0, len(section)):
                 section[i] = section[i].replace('d>', 'u>')
 
         elif bottomIndex < 59:
-            pairs = linePairs[max(bottomIndex-sectionSize, topIndex):bottomIndex]
+            pairs = linePairs[max(bottomIndex-sectionSize, topIndex):bottomIndex+1]
             section = interlacePairs(pairs)
 
         else:
