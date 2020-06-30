@@ -1,7 +1,22 @@
 const fs = require('fs');
 const {createCanvas, loadImage} = require('canvas');
-const canvas = createCanvas(60, 60);
-const context = canvas.getContext('2d');
+const pokemonData = require('./pokemon-data.js').data;
+
+/*let allTypes = [];
+Object.keys(pokemonData).forEach(key => {
+    const data = pokemonData[key];
+
+    [data.typePrimary, data.typeSecondary].forEach(type => {
+        if (type) {
+            type = type.toLowerCase();
+
+            if (allTypes.indexOf(type) == -1) {
+                allTypes.push(type);
+            }
+        }
+    });
+});
+console.log(allTypes);*/
 
 let lines = [];
 let n = 0;
@@ -9,67 +24,59 @@ let n = 0;
 function next() {
     n ++;
 
-    //if (n > 251) {
-    if (n > 1) {
+    if (n > 386) {
         console.log(lines.join('\n'));
         return;
     }
 
-    loadImage('animation-frames/' + n + '-0.png').then(imageA => {
-        loadImage('animation-frames/' + n + '-1.png').then(imageB => {
-            context.clearRect(0, 0, 60, 60);
-            context.drawImage(imageA, 0, 0);
-            let imageDataA = context.getImageData(0, 0, 60, 60);
-            let dataA = imageDataA.data;
+    loadImage('pokemon/' + n + '.png').then(image => {
+        const width = image.width;
+        const height = image.height;
 
-            context.clearRect(0, 0, 60, 60);
-            context.drawImage(imageB, 0, 0);
-            let imageDataB = context.getImageData(0, 0, 60, 60);
-            let dataB = imageDataB.data;
+        const canvas = createCanvas(width, height);
+        const context = canvas.getContext('2d');
 
-            for (let y = 0; y < 60; y ++) {
-                let framePair = [];
+        context.clearRect(0, 0, width, height);
+        context.drawImage(image, 0, 0);
+        let imageData = context.getImageData(0, 0, width, height);
+        let data = imageData.data;
 
-                [dataA, dataB].forEach((data, f) => {
-                    let split = [];
+        for (let y = 0; y < height; y ++) {
+            let split = [];
 
-                    for (let x = 0; x < 60; x ++) {
-                        let i = ((y*60) + x) * 4;
+            for (let x = 0; x < width; x ++) {
+                let i = ((y*width) + x) * 4;
 
-                        let r = Math.floor(data[i+0]/64);
-                        let g = Math.floor(data[i+1]/64);
-                        let b = Math.floor(data[i+2]/64);
+                let r = Math.floor(data[i+0]/64);
+                let g = Math.floor(data[i+1]/64);
+                let b = Math.floor(data[i+2]/64);
 
-                        let s = '~';
+                let s = '~';
 
-                        if (data[i+3] > 128) {
-                            let c = 0;
+                if (data[i+3] > 128) {
+                    let c = 0;
 
-                            c += r;
-                            c = c << 2;
-                            c += g;
-                            c = c << 2;
-                            c += b;
+                    c += r;
+                    c = c << 2;
+                    c += g;
+                    c = c << 2;
+                    c += b;
 
-                            s = String.fromCharCode(c+33);
-                        }
+                    s = String.fromCharCode(c+33);
+                }
 
-                        split.push(s);
-                    }
-
-                    const lineNumber = ('00'+y).substr(-2);
-                    framePair.push(['<'+lineNumber+(!f ? 'A' : 'B')+'d>'].concat(split).join(' '));
-                });
-
-                lines.push(framePair[0]);
-                lines.push(framePair[1]);
-
-                lines.unshift(framePair[1].replace('d>', 'u>'));
-                lines.unshift(framePair[0].replace('d>', 'u>'));
+                split.push(s);
             }
 
-            next();
-        });
+            const pokemon = pokemonData[n];
+            let typePrimary = pokemon.typePrimary.substring(0, 2).toLowerCase();
+            const lineNumber = ('00'+y).substr(-2);
+
+            lines.push([lineNumber+'d', typePrimary].concat(split).join(' '));
+            lines.unshift([lineNumber+'u', typePrimary].concat(split).join(' '));
+        }
+
+        next();
     });
 }
 

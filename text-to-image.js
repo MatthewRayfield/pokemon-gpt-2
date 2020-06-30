@@ -1,16 +1,5 @@
 const fs = require('fs');
 const {createCanvas, loadImage, createImageData} = require('canvas');
-const GIFEncoder = require('gifencoder');
-
-function parseMarker(string) {
-    let result = /<([0-9]+)([AB])([ud])>/.exec(string);
-
-    if (result) {
-        return {line: parseInt(result[1]), frame: result[2] == 'A' ? 0 : 1, direction: result[3]};
-    }
-
-    return null;
-}
 
 process.argv.slice(2).forEach(path => {
     const inputFilename = path.split('/').slice(-1)[0];
@@ -18,18 +7,31 @@ process.argv.slice(2).forEach(path => {
     const text = fs.readFileSync(path, 'utf8');
     const lines = text.split('\n');
 
+    const typeCounts = {};
+    let mostCount = 0;
+    let mostType;
+
     let imageWidth = 0;
     let imageHeight = 0;
     lines.forEach(line => {
         const split = line.split(' ');
-        const marker = parseMarker(split[0]);
+        const marker = split[0];
 
-        if (marker) {
-            if (marker.line + 1 > imageHeight) {
-                imageHeight = marker.line + 1;
+        let type = split[1];
+        typeCounts[type] = typeCounts[type] ? typeCounts[type] + 1 : 1;
+        if (typeCounts[type] > mostCount) {
+            mostCount = typeCounts[type];
+            mostType = type;
+        }
+
+        if (marker.length == 3) {
+            const line = parseInt(marker.substring(0, 2));
+
+            if (line > imageHeight) {
+                imageHeight = line + 1;
             }
 
-            const lineWidth = split.length - 1;
+            const lineWidth = split.length - 2;
 
             if (lineWidth > imageWidth) {
                 imageWidth = lineWidth;
@@ -37,28 +39,21 @@ process.argv.slice(2).forEach(path => {
         }
     });
 
-    const canvasA = createCanvas(imageWidth, imageHeight);
-    const contextA = canvasA.getContext('2d');
+    const canvas = createCanvas(imageWidth, imageHeight);
+    const context = canvas.getContext('2d');
 
-    const imageDataA = createImageData(imageWidth, imageHeight);
-    const dataA = imageDataA.data;
-
-    const canvasB = createCanvas(imageWidth, imageHeight);
-    const contextB = canvasB.getContext('2d');
-
-    const imageDataB = createImageData(imageWidth, imageHeight);
-    const dataB = imageDataB.data;
+    const imageData = createImageData(imageWidth, imageHeight);
+    const data = imageData.data;
 
     lines.forEach(line => {
         const split = line.split(' ');
-        const marker = parseMarker(split[0]);
+        const marker = split[0];
 
-        if (marker) {
-            const y = marker.line;
-            const data = [dataA, dataB][marker.frame];
+        if (marker.length) {
+            const y = parseInt(marker.substring(0, 2));
 
-            for (let x = 0; x < split.length-1; x ++) {
-                let s = split[x+1] || '~';
+            for (let x = 0; x < split.length-2; x ++) {
+                let s = split[x+2] || '~';
 
                 if (s != '~') {
                     let i = ((y*imageWidth) + x) * 4;
@@ -83,17 +78,9 @@ process.argv.slice(2).forEach(path => {
         }
     });
 
-    contextA.putImageData(imageDataA, 0, 0);
-    contextB.putImageData(imageDataB, 0, 0);
+    context.putImageData(imageData, 0, 0);
 
-    const encoder = new GIFEncoder(imageWidth, imageHeight);
-    encoder.createReadStream().pipe(fs.createWriteStream('output/'+inputFilename.split('.')[0]+'.gif'));
-    encoder.start();
-    encoder.setRepeat(0); // 0 = repeat -1 = no repeat
-    encoder.setDelay(500);
-    encoder.setQuality(1); // lower is better 1 is lowest
-
-    encoder.addFrame(contextA);
-    encoder.addFrame(contextB);
-    encoder.finish();
+    const stream = canvas.createPNGStream();
+    const out = fs.createWriteStream('output/'+mostType+'-'+inputFilename.split('.')[0]+'.png');
+    stream.pipe(out);
 });
