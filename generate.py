@@ -1,45 +1,69 @@
-#import random
-#import time
-#import gpt_2_simple as gpt2
+import sys
+import random
+import time
+import gpt_2_simple as gpt2
 
 width = 64
 height = 64
-
-#run_name = 'pokerun6.0-30000'
+startFile = ''
+run_name = 'pokemon-gpt-2-multigen-250000'
 
 sess = gpt2.start_tf_sess()
-gpt2.load_gpt2(sess, run_name=run_name)
 
 def blankLines():
     lines = []
+
     for i in range(0, height):
         lines.append('')
+
     return lines
 
+def readFile(filepath):
+    with open(filepath) as f:
+        content = f.read()
 
-for ii in range(0,1):
-    #sess = gpt2.reset_session(sess)
-    #gpt2.load_gpt2(sess, run_name=run_name)
+    return content
 
+for ii in range(0, 10):
+    sess = gpt2.reset_session(sess)
+    gpt2.load_gpt2(sess, run_name=run_name)
+
+    debug = []
     lines = blankLines()
 
-    prefix = ''
-    temp = 80 #random.randint(0,30) + 70
+    prefix = '_ _ _ '
+    temp = random.randint(0, 40) + 80
     hasColor = False
+    first = True
+
+    cycleCount = 0
 
     while True:
-        text = gpt2.generate(sess, run_name=run_name, prefix=prefix, temperature=(temp/100), return_as_list=True)[0]
+        debug.append('\n\ncycle %i' % cycleCount)
+        debug.append('prefix:')
+        debug.append(prefix)
+        cycleCount += 1
 
-        print('\n\noutput:');
+        if startFile and first:
+            text = readFile(startFile)
+        else:
+            text = gpt2.generate(sess, run_name=run_name, prefix=prefix, temperature=(temp/100), return_as_list=True)[0]
+
+        first = False
+
+        debug.append('output:')
+        debug.append(text)
+        print('\n\noutput:')
         print(text)
 
         newLines = text.split('\n')
 
+        direction = None
         lastIndex = None
         for line in newLines:
                 split = line.split(' ')[:width + 2]
 
-                if len(split) < 50:
+                if len(split) < 55:
                     break;
 
                 marker = split[0]
@@ -49,10 +73,22 @@ for ii in range(0,1):
                     except:
                         break
 
+                    if direction == None:
+                        direction = marker[2]
+
+                    if marker[2] != direction:
+                        debug.append('direction changed')
+                        print('direction changed')
+                        break
+
                     if lastIndex != None:
-                        if marker[2] == 'd' and index < lastIndex:
+                        if marker[2] == 'd' and index <= lastIndex:
+                            debug.append('bad line order')
+                            print('bad line order')
                             break
-                        elif marker[2] == 'u' and index > lastIndex:
+                        elif marker[2] == 'u' and index >= lastIndex:
+                            debug.append('bad line order')
+                            print('bad line order')
                             break
                     lastIndex = index
 
@@ -65,13 +101,19 @@ for ii in range(0,1):
                                 break
 
                     while len(split) < width:
-                        split.append('`')
+                        split.append('~')
 
-                    lines[index] = ' '.join(split)
+                    try:
+                        lines[index] = ' '.join(split)
+                    except IndexError:
+                        debug.append('line number out of range')
+                        print('line number out of range')
+                        break
 
         if not hasColor:
+            debug.append('no color')
             print('no color')
-            linePairs = blankLines()
+            lines = blankLines()
             continue
 
         topIndex = None
@@ -87,6 +129,7 @@ for ii in range(0,1):
             else:
                 break
 
+        debug.append('top %i bottom %i' % (topIndex, bottomIndex))
         print('\n\ntop %i bottom %i' % (topIndex, bottomIndex))
 
         sectionSize = 5
@@ -101,10 +144,16 @@ for ii in range(0,1):
 
         else:
             print('\n'.join(lines))
-            #text_file = open('texts/%03d-%i.txt' % (temp, int(time.time())), 'w')
-            text_file = open('/content/drive/My Drive/pokemon-output-texts-6.0/30000-%03d-%i.txt' % (temp, int(time.time())), 'w')
+            filename = '%03d-%i' % (temp, int(time.time()))
+
+            text_file = open('output/%s.txt' % filename, 'w')
             text_file.write('\n'.join(lines))
             text_file.close()
+
+            debug_file = open('output/%s.log' % filename, 'w')
+            debug_file.write('\n'.join(debug))
+            debug_file.close()
+
             print('saved !')
             break
 
