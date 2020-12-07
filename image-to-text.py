@@ -3,7 +3,7 @@ import math
 from PIL import Image
 
 for path in sys.argv[1:]:
-    image = Image.open(path)
+    image = Image.open(path).convert('RGBA')
     pixels = image.load()
     width = image.size[0]
     height = image.size[1]
