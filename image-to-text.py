@@ -18,7 +18,7 @@ for path in sys.argv[1:]:
 
             s = '~'
 
-            if color[3] > 128:
+            if len(color) < 4 or color[3] > 128:
                 r = color[0]
                 g = color[1]
                 b = color[2]
